@@ -1,15 +1,15 @@
 use std::time::Duration;
 use tokio::time::sleep;
-use ZubrStateMachine::*;
+use zubr_state_machine::*;
 
 
 
 #[tokio::main]
 async fn main() {
     let mut sm = StateMachine::<u64, u64, u64>::new(
-        0u64, // initial state set to 0 
+        0u64, // initial state set to 0
         10, // maximum input buffer size
-        |input, state| input + state, // calculate state by adding the input and current state 
+        |input, state| input + state, // calculate state by adding the input and current state
         |state| state * state, // output is the square of the current state
     );
     let mut output_handle = sm.spawn_output_handle();
@@ -32,7 +32,7 @@ async fn main() {
 
     println!("{}", asynchronous_result); // should print 1
     println!("{}", synchronous_result); // should print 9
-    
+
     output_handle.close();
     let _ = join.await;
     let _ = async_input_join.await;
