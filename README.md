@@ -1,6 +1,6 @@
-# Rust-template
+# ZubrStateMachine
 
-![Template taken from here](https://github.com/zaszi/rust-template/blob/master/README.md)
+[Template taken from here](https://github.com/zaszi/rust-template/blob/master/README.md)
 
 A simple asynchronous state machine library for creating Mealy machines in rust.
 
