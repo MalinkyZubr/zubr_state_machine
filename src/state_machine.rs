@@ -6,12 +6,15 @@ use tokio::sync::{
     RwLock,
 };
 
+/// Handle for reading outputs from a state machine and controlling its shutdown.
 pub struct StateMachineOutputHandle<O> {
     output: Arc<RwLock<Option<O>>>,
     output_broadcast_receiver: BrReceiver<Option<O>>,
     shutdown_flag: Arc<Notify>,
 }
+
 impl<O: Clone> StateMachineOutputHandle<O> {
+    /// Creates a new output handle with shared references to the state machine's output.
     fn new(
         output: Arc<RwLock<Option<O>>>,
         shutdown_flag: Arc<Notify>,
@@ -23,42 +26,61 @@ impl<O: Clone> StateMachineOutputHandle<O> {
             output_broadcast_receiver,
         }
     }
+
+    /// Attempts to read the current output without blocking.
+    /// Returns `None` if the lock is held or there's no output.
     pub fn try_read(&self) -> Option<O> {
         match self.output.try_read() {
             Ok(guard) => guard.clone(),
             Err(_) => None,
         }
     }
+
+    /// Asynchronously reads the current output, waiting for the lock if necessary.
     pub async fn async_read(&self) -> Option<O> {
         self.output.read().await.clone()
     }
+
+    /// Waits for the next state change and returns the new output.
+    /// Returns `None` if the state machine has been shut down.
     pub async fn await_state_change(&mut self) -> Option<O> {
         match self.output_broadcast_receiver.changed().await {
             Ok(_) => self.output_broadcast_receiver.borrow().clone(),
             Err(_err) => None,
         }
     }
+
+    /// Signals the state machine to shut down gracefully.
     pub fn close(&self) {
         self.shutdown_flag.notify_waiters();
     }
 }
 
+/// Handle for sending inputs to a state machine.
 pub struct StateMachineInputHandle<I> {
     input_sender: Sender<I>,
 }
+
 impl<I: Clone> StateMachineInputHandle<I> {
+    /// Creates a new input handle with a channel sender.
     fn new(input_sender: Sender<I>) -> Self {
         Self { input_sender }
     }
+
+    /// Asynchronously sends an input to the state machine.
+    /// Returns an error if the receiver has been dropped.
     pub async fn send_async(&self, input: I) -> Result<(), SendError<I>> {
         self.input_sender.send(input).await
     }
 
+    /// Attempts to send an input without blocking.
+    /// Returns an error if the channel is full or the receiver has been dropped.
     pub fn send(&self, input: I) -> Result<(), TrySendError<I>> {
         self.input_sender.try_send(input)
     }
 }
 
+/// A generic state machine that processes inputs and generates outputs based on state transitions.
 pub struct StateMachine<I: Clone, T: Clone, O: Clone> {
     state: T,
     input_receiver: Receiver<I>,
@@ -69,7 +91,15 @@ pub struct StateMachine<I: Clone, T: Clone, O: Clone> {
     output_broadcast_sender: BrSender<Option<O>>,
     shutdown_flag: Arc<Notify>,
 }
+
 impl<I: Clone, T: Clone, O: Clone> StateMachine<I, T, O> {
+    /// Creates a new state machine with the given initial state and logic functions.
+    ///
+    /// # Arguments
+    /// * `initial_state` - The starting state of the machine
+    /// * `input_buffer_size` - Maximum number of pending inputs in the channel
+    /// * `next_state_logic` - Function that computes the next state from input and current state
+    /// * `output_logic` - Function that computes output from the current state
     pub fn new(
         initial_state: T,
         input_buffer_size: usize,
@@ -92,6 +122,8 @@ impl<I: Clone, T: Clone, O: Clone> StateMachine<I, T, O> {
         }
     }
 
+    /// Processes a single input through the state machine's logic.
+    /// Updates the state and broadcasts the new output to all listeners.
     async fn main_loop(&mut self, input: Option<I>) {
         match input {
             Some(input) => {
@@ -110,6 +142,9 @@ impl<I: Clone, T: Clone, O: Clone> StateMachine<I, T, O> {
             None => (),
         }
     }
+
+    /// Runs the state machine's main event loop.
+    /// Processes inputs until a shutdown signal is received.
     pub async fn run(&mut self) {
         let mut running = true;
         while running {
@@ -124,14 +159,17 @@ impl<I: Clone, T: Clone, O: Clone> StateMachine<I, T, O> {
         }
     }
 
+    /// Returns a reference to the current state.
     pub fn get_state(&self) -> &T {
         &self.state
     }
 
+    /// Creates a new input handle for sending inputs to this state machine.
     pub fn spawn_input_handle(&self) -> StateMachineInputHandle<I> {
         StateMachineInputHandle::new(self.input_sender_template.clone())
     }
 
+    /// Creates a new output handle for reading outputs from this state machine.
     pub fn spawn_output_handle(&self) -> StateMachineOutputHandle<O> {
         StateMachineOutputHandle::new(
             self.output.clone(),
@@ -410,6 +448,7 @@ mod tests {
         let _ = join.await;
     }
 
+    /// Helper function to create a state machine with input and output handles for testing.
     fn create_state_machine<
         I: Clone + Send + 'static,
         T: Clone + Send + 'static,
