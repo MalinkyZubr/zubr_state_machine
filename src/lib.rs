@@ -1,5 +1,2 @@
-mod state_machine;
-
-fn main() {
-    println!("Hello, world!");
-}
+pub mod state_machine;
+pub use state_machine::*;

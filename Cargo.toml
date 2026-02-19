@@ -2,6 +2,12 @@
 name = "ZubrStateMachine"
 version = "0.1.0"
 edition = "2024"
+license-file = "LICENSE"
+description = "A simple asynchronous state machine library for creating Mealy machines in rust."
+readme = "README.md"
+repository = "https://github.com/MalinkyZubr/ZubrStateMachine.git"
+keywords = ["state", "asynchronous", "mealy", "machine"]
+categories = ["asynchronous"]
 
 [dependencies]
-tokio = { version="1.49.0", features=["rt", "rt-multi-thread", "sync"] }
+tokio = { version="1.49.0", features=["rt", "rt-multi-thread", "sync", "rt", "macros", "time"] }
