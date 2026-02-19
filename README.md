@@ -1,6 +1,6 @@
 # zubr_state_machine
 
-![](https://github.com/MalinkyZubr/zubr_state_machine/statemachine.png)
+![Waltuh. State Machine](https://github.com/MalinkyZubr/zubr_state_machine/blob/main/statemachine.png)
 [Template taken from here](https://github.com/zaszi/rust-template/blob/master/README.md)
 
 A simple asynchronous state machine library for creating Mealy machines in rust.
