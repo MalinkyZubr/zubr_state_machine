@@ -8,6 +8,7 @@ readme = "README.md"
 repository = "https://github.com/MalinkyZubr/ZubrStateMachine.git"
 keywords = ["state", "asynchronous", "mealy", "machine"]
 categories = ["asynchronous"]
+exclude = ["statemachine.png"]
 
 [dependencies]
 tokio = { version="1.49.0", features=["rt", "rt-multi-thread", "sync", "rt", "macros", "time"] }
